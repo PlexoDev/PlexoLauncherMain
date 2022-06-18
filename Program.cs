@@ -126,7 +126,13 @@ namespace PlexoLauncherMain
                 && File.Exists(localAppDataPath + "\\Ple14L\\Versions\\" + currentVersion + "\\PlexoParseLauncherUri.exe"))
             {
                 Console.WriteLine("Plexo installation part one was a success, let's try to register our keys in the registry.");
-                registerInRegistry();
+                try
+                {
+                    MessageBox.Show("Plexo Install was successful.", "Success");
+                } catch (Exception e)
+                {
+                    MessageBox.Show("Plexo Install failed whilst writing registry keys. Error: " + e.Message, "Error");
+                }
             } else
             {
                 Console.WriteLine("Cannot continue, as Plexo installation part one failed.");
@@ -178,6 +184,7 @@ namespace PlexoLauncherMain
                     Process process = new Process();
                     process.EnableRaisingEvents = true;
                     process.Exited += new EventHandler(process_Exited);
+                    process.StartInfo = info;
                     process.Start();
 
                     Console.WriteLine("Started Bootstrapper");
@@ -187,7 +194,6 @@ namespace PlexoLauncherMain
                     Console.WriteLine("Cannot continue with installation, as our Bootstrapper was not found.");
                     MessageBox.Show("Plexo Install was unsuccessful. Bootstrapper was not found.", "Error");
                 }
-                MessageBox.Show("Plexo Install was successful.", "Error");
             } else
             {
                 Console.WriteLine("Uninstalling...");
