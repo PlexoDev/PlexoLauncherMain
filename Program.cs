@@ -61,7 +61,7 @@ namespace PlexoLauncherMain
         private static void registerInRegistry()
         {
             // Prelauncher
-            RegistryKey key = Registry.ClassesRoot.CreateSubKey("plexo-prelaunch14L");
+            RegistryKey key = Registry.ClassesRoot.CreateSubKey("plexo-prelaunch14l");
             key.SetValue("", "URL: PlexoPreLaunch14L Protocol");
             key.SetValue("URL Protocol", "");
 
@@ -93,6 +93,12 @@ namespace PlexoLauncherMain
             Console.WriteLine("Created all keys for actual launcher.");
             Console.WriteLine("Created all keys successfully!");
         }
+        private static bool regKeyExists(RegistryKey baseKey, string subKeyName)
+        {
+            RegistryKey ret = baseKey.OpenSubKey(subKeyName);
+
+            return ret != null;
+        }
         private static void process_Exited(object sender, EventArgs args)
         {
             // we need to make sure that all of these actually exist before we create keys in the registry
@@ -109,6 +115,11 @@ namespace PlexoLauncherMain
         }
         static async Task Main(string[] args)
         {
+            if (regKeyExists(Registry.ClassesRoot, "plexo-prelaunch14l") || regKeyExists(Registry.ClassesRoot, "ple14l-player"))
+            {
+                Console.WriteLine("Plexo is already installed!");
+                Environment.Exit(0);
+            }
             string bootstrapperExePath = tempPath + "\\PlexoPlayerLauncher-" + generateRandString() + ".exe";
             currentVersion = getStringFromUrl(generateBaseUrl(1) + "/version");
             Console.WriteLine("Downloading Bootstrapper...");
