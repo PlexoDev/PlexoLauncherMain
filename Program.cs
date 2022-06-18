@@ -12,6 +12,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using Microsoft.Win32;
 
 namespace PlexoLauncherMain
@@ -21,6 +22,7 @@ namespace PlexoLauncherMain
         private static string currentVersion = ""; // we get this later on
         private static string tempPath = Path.GetTempPath();
         private static string localAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        private static bool uninstalling = false;
         private static string getStringFromUrl(string url)
         {
             using(WebClient wc = new WebClient())
@@ -90,6 +92,18 @@ namespace PlexoLauncherMain
             RegistryKey key9 = key8.CreateSubKey("command");
             key9.SetValue("", "\"" + localAppDataPath + "\\Ple14L\\Versions\\" + currentVersion + "\\RobloxPlayerLauncher.exe" + "\" %1");
 
+            // Let's close everything now
+            key.Close();
+            key1.Close();
+            key2.Close();
+            key3.Close();
+            key4.Close();
+            key5.Close();
+            key6.Close();
+            key7.Close();
+            key8.Close();
+            key9.Close();
+
             Console.WriteLine("Created all keys for actual launcher.");
             Console.WriteLine("Created all keys successfully!");
         }
@@ -110,36 +124,79 @@ namespace PlexoLauncherMain
             } else
             {
                 Console.WriteLine("Cannot continue, as Plexo installation part one failed.");
+                MessageBox.Show("Plexo was not completely downloaded. Try installing again. If the issue persists, ask for help in the Discord.", "Error");
+                Environment.Exit(0);
+            }
+        }
+        private static void checkIfInstalled()
+        {
+            if (regKeyExists(Registry.ClassesRoot, "plexo-prelaunch14l") || regKeyExists(Registry.ClassesRoot, "ple14l-player"))
+            {
+                Console.WriteLine("Plexo is already installed!");
+                MessageBox.Show("Plexo is already installed!", "Error");
                 Environment.Exit(0);
             }
         }
         static async Task Main(string[] args)
         {
-            if (regKeyExists(Registry.ClassesRoot, "plexo-prelaunch14l") || regKeyExists(Registry.ClassesRoot, "ple14l-player"))
+            checkIfInstalled();
+
+            foreach(string arg in args)
             {
-                Console.WriteLine("Plexo is already installed!");
-                Environment.Exit(0);
+                switch(arg.ToLower())
+                {
+                    case "-uninstall":
+                        Console.WriteLine("Uninstalling argument found");
+                        uninstalling = true;
+                        break;
+                    default:
+                        break;
+                }
             }
-            string bootstrapperExePath = tempPath + "\\PlexoPlayerLauncher-" + generateRandString() + ".exe";
-            currentVersion = getStringFromUrl(generateBaseUrl(1) + "/version");
-            Console.WriteLine("Downloading Bootstrapper...");
-            await downloadFile(generateBaseUrl(1) + "/Roblox.exe", bootstrapperExePath);
-            if(File.Exists(bootstrapperExePath))
+
+            if(!uninstalling)
             {
-                Console.WriteLine("Bootstrapper found!");
+                string bootstrapperExePath = tempPath + "\\PlexoPlayerLauncher-" + generateRandString() + ".exe";
+                currentVersion = getStringFromUrl(generateBaseUrl(1) + "/version");
 
-                ProcessStartInfo info = new ProcessStartInfo();
-                info.FileName = bootstrapperExePath;
+                Console.WriteLine("Downloading Bootstrapper...");
+                await downloadFile(generateBaseUrl(1) + "/Roblox.exe", bootstrapperExePath);
 
-                Process process = new Process();
-                process.EnableRaisingEvents = true;
-                process.Exited += new EventHandler(process_Exited);
-                process.Start();
+                if (File.Exists(bootstrapperExePath))
+                {
+                    Console.WriteLine("Bootstrapper found!");
 
-                Console.WriteLine("Started Bootstrapper");
+                    ProcessStartInfo info = new ProcessStartInfo();
+                    info.FileName = bootstrapperExePath;
+
+                    Process process = new Process();
+                    process.EnableRaisingEvents = true;
+                    process.Exited += new EventHandler(process_Exited);
+                    process.Start();
+
+                    Console.WriteLine("Started Bootstrapper");
+                }
+                else
+                {
+                    Console.WriteLine("Cannot continue with installation, as our Bootstrapper was not found.");
+                    MessageBox.Show("Plexo Install was unsuccessful. Bootstrapper was not found.", "Error");
+                }
+                MessageBox.Show("Plexo Install was successful.", "Error");
             } else
             {
-                Console.WriteLine("Cannot continue with installation, as our Bootstrapper was not found.");
+                Console.WriteLine("Uninstalling...");
+
+                if(Directory.Exists(localAppDataPath + "\\Ple14L"))
+                {
+                    Directory.Delete(localAppDataPath + "\\Ple14L", true);
+                }
+
+                if(regKeyExists(Registry.ClassesRoot, "plexo-prelaunch14l") && regKeyExists(Registry.ClassesRoot, "ple14l-player"))
+                {
+                    Registry.ClassesRoot.DeleteSubKey("plexo-prelaunch14l");
+                }
+
+                MessageBox.Show("Plexo Uninstall was successful.", "Uninstalled");
             }
             //Environment.Exit(0);
         }
