@@ -48,7 +48,7 @@ namespace PlexoLauncherMain
                     await wc.DownloadFileTaskAsync(url, location);
                 } catch (WebException e)
                 {
-                    MessageBox.Show("Plexo was not completely downloaded. Error: " + e.Message, "Error");
+                    MessageBox.Show("Plexo was not downloaded. Error: " + e.Message + " Ask for help in the Plexo discord.", "Error");
                 }
             }
         }
