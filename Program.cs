@@ -43,7 +43,13 @@ namespace PlexoLauncherMain
         {
             using(WebClient wc = new WebClient())
             {
-                await wc.DownloadFileTaskAsync(url, location);
+                try
+                {
+                    await wc.DownloadFileTaskAsync(url, location);
+                } catch (WebException e)
+                {
+                    MessageBox.Show("Plexo was not completely downloaded. Error: " + e.Message, "Error");
+                }
             }
         }
         private static string generateBaseUrl(int type)
