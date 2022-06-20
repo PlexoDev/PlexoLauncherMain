@@ -21,9 +21,10 @@ namespace PlexoLauncherMain
     {
         private static string currentVersion = ""; // we get this later on
         private static string tempPath = Path.GetTempPath();
-        private static string localAppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        private static string plexoInstallPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         private static RegistryKey softwareClasses = Registry.CurrentUser.OpenSubKey("Software").OpenSubKey("Classes", true);
         private static bool uninstalling = false;
+        private static bool useProgramFiles = false;
         private static string getStringFromUrl(string url)
         {
             using(WebClient wc = new WebClient())
@@ -67,6 +68,16 @@ namespace PlexoLauncherMain
                     return "http://plexxo.xyz";
             }
         }
+        // https://stackoverflow.com/a/194223/
+        private static string getProgramFilesDir()
+        {
+            if (8 == IntPtr.Size || (!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("PROCESSOR_ARCHITEW6432"))))
+            {
+                return Environment.GetEnvironmentVariable("ProgramFiles(x86)");
+            }
+
+            return Environment.GetEnvironmentVariable("ProgramFiles");
+        }
         private static void registerInRegistry()
         {
             // Prelauncher
@@ -75,13 +86,13 @@ namespace PlexoLauncherMain
             key.SetValue("URL Protocol", "");
 
             RegistryKey key1 = key.CreateSubKey("DefaultIcon", true);
-            key1.SetValue("", localAppDataPath + "\\Ple14L\\Versions\\" + currentVersion + "\\PlexoParseLauncherUri.exe");
+            key1.SetValue("", plexoInstallPath + "\\Ple14L\\Versions\\" + currentVersion + "\\PlexoParseLauncherUri.exe");
 
             RegistryKey key2 = key.CreateSubKey("shell", true);
             RegistryKey key3 = key2.CreateSubKey("open", true);
 
             RegistryKey key4 = key3.CreateSubKey("command", true);
-            key4.SetValue("", "\"" + localAppDataPath + "\\Ple14L\\Versions\\" + currentVersion + "\\PlexoParseLauncherUri.exe" + "\" %1");
+            key4.SetValue("", "\"" + plexoInstallPath + "\\Ple14L\\Versions\\" + currentVersion + "\\PlexoParseLauncherUri.exe" + "\" %1");
 
             Console.WriteLine("Created all keys for Prelauncher.");
 
@@ -91,13 +102,13 @@ namespace PlexoLauncherMain
             key5.SetValue("URL Protocol", "");
 
             RegistryKey key6 = key5.CreateSubKey("DefaultIcon", true);
-            key6.SetValue("", localAppDataPath + "\\Ple14L\\Versions\\" + currentVersion + "\\RobloxPlayerLauncher.exe");
+            key6.SetValue("", plexoInstallPath + "\\Ple14L\\Versions\\" + currentVersion + "\\RobloxPlayerLauncher.exe");
 
             RegistryKey key7 = key5.CreateSubKey("shell", true);
             RegistryKey key8 = key7.CreateSubKey("open", true);
 
             RegistryKey key9 = key8.CreateSubKey("command", true);
-            key9.SetValue("", "\"" + localAppDataPath + "\\Ple14L\\Versions\\" + currentVersion + "\\RobloxPlayerLauncher.exe" + "\" %1");
+            key9.SetValue("", "\"" + plexoInstallPath + "\\Ple14L\\Versions\\" + currentVersion + "\\RobloxPlayerLauncher.exe" + "\" %1");
 
             // Let's close everything now
             key.Close();
@@ -123,22 +134,29 @@ namespace PlexoLauncherMain
         private static void process_Exited(object sender, EventArgs args)
         {
             // we need to make sure that all of these actually exist before we create keys in the registry
-            if(File.Exists(localAppDataPath + "\\Ple14L\\Versions\\" + currentVersion + "\\RobloxPlayerLauncher.exe")
-                && File.Exists(localAppDataPath + "\\Ple14L\\Versions\\" + currentVersion + "\\PlexoParseLauncherUri.exe"))
+            if(useProgramFiles)
+            {
+                plexoInstallPath = getProgramFilesDir();
+            }
+
+            if (File.Exists(plexoInstallPath + "\\Ple14L\\Versions\\" + currentVersion + "\\RobloxPlayerLauncher.exe")
+                && File.Exists(plexoInstallPath + "\\Ple14L\\Versions\\" + currentVersion + "\\PlexoParseLauncherUri.exe"))
             {
                 Console.WriteLine("Plexo installation part one was a success, let's try to register our keys in the registry.");
                 try
                 {
                     registerInRegistry();
-                    MessageBox.Show("Plexo Install was successful.", "Success");
-                } catch (Exception e)
-                {
-                    MessageBox.Show("Plexo Install failed whilst writing registry keys. Error: " + e.Message, "Error");
+                    MessageBox.Show("Plexo Install was successful.", "Success", MessageBoxButton.OK, MessageBoxImage.Asterisk);
                 }
-            } else
+                catch (Exception e)
+                {
+                    MessageBox.Show("Plexo Install failed whilst writing registry keys. Error: " + e.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            else
             {
                 Console.WriteLine("Cannot continue, as Plexo installation part one failed.");
-                MessageBox.Show("Plexo was not completely downloaded. Try installing again. If the issue persists, ask for help in the Discord.", "Error");
+                MessageBox.Show("Plexo was not completely downloaded. Try installing again. If the issue persists, ask for help in the Discord.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Environment.Exit(0);
             }
         }
@@ -147,7 +165,7 @@ namespace PlexoLauncherMain
             if (regKeyExists(softwareClasses, "plexo-prelaunch14l") || regKeyExists(softwareClasses, "ple14l-player"))
             {
                 Console.WriteLine("Plexo is already installed!");
-                MessageBox.Show("Plexo is already installed!", "Error");
+                MessageBox.Show("Plexo is already installed!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 Environment.Exit(0);
             }
         }
@@ -188,22 +206,42 @@ namespace PlexoLauncherMain
                     process.Exited += new EventHandler(process_Exited);
                     process.StartInfo = info;
                     process.Start();
-                    process.WaitForExit();
 
                     Console.WriteLine("Started Bootstrapper");
+
+                    process.WaitForExit();
+                    
+                    if(!Directory.Exists(plexoInstallPath + "\\Ple14L") && Directory.Exists(getProgramFilesDir() + "\\Ple14L"))
+                    {
+                        useProgramFiles = true;
+                    }
                 }
                 else
                 {
-                    Console.WriteLine("Cannot continue with installation, as our Bootstrapper was not found.");
-                    MessageBox.Show("Plexo Install was unsuccessful. Bootstrapper was not found.", "Error");
+                    Console.WriteLine("Cannot continue with installation, as the Bootstrapper was not found.");
+                    MessageBox.Show("Plexo Install was unsuccessful. Bootstrapper was not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             } else
             {
                 Console.WriteLine("Uninstalling...");
 
-                if(Directory.Exists(localAppDataPath + "\\Ple14L"))
+                if (!Directory.Exists(plexoInstallPath + "\\Ple14L") && Directory.Exists(getProgramFilesDir() + "\\Ple14L"))
                 {
-                    Directory.Delete(localAppDataPath + "\\Ple14L", true);
+                    useProgramFiles = true;
+                }
+
+                if(useProgramFiles)
+                {
+                    if (Directory.Exists(getProgramFilesDir() + "\\Ple14L"))
+                    {
+                        Directory.Delete(getProgramFilesDir() + "\\Ple14L", true);
+                    }
+                } else
+                {
+                    if (Directory.Exists(plexoInstallPath + "\\Ple14L"))
+                    {
+                        Directory.Delete(plexoInstallPath + "\\Ple14L", true);
+                    }
                 }
 
                 if(regKeyExists(softwareClasses, "plexo-prelaunch14l") && regKeyExists(softwareClasses, "ple14l-player"))
@@ -211,7 +249,7 @@ namespace PlexoLauncherMain
                     softwareClasses.DeleteSubKey("plexo-prelaunch14l");
                 }
 
-                MessageBox.Show("Plexo Uninstall was successful.", "Uninstalled");
+                MessageBox.Show("Plexo Uninstall was successful.", "Uninstalled", MessageBoxButton.OK, MessageBoxImage.Asterisk);
             }
             //Environment.Exit(0);
         }
