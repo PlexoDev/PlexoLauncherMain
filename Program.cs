@@ -233,6 +233,7 @@ namespace PlexoLauncherMain
 
                 if (!Directory.Exists(plexoInstallPath + "\\Ple14L") && Directory.Exists(getProgramFilesDir() + "\\Ple14L"))
                 {
+                    Console.WriteLine("Using Program Files (x86) folder");
                     useProgramFiles = true;
                 }
 
@@ -242,6 +243,7 @@ namespace PlexoLauncherMain
                     {
                         if(isAdministrator())
                         {
+                            Console.WriteLine("Deleting folder " + getProgramFilesDir() + "\\Ple14L");
                             Directory.Delete(getProgramFilesDir() + "\\Ple14L", true);
                         } else
                         {
@@ -252,16 +254,21 @@ namespace PlexoLauncherMain
                 {
                     if (Directory.Exists(plexoInstallPath + "\\Ple14L"))
                     {
+                        Console.WriteLine("Deleting folder " + plexoInstallPath + "\\Ple14L");
                         Directory.Delete(plexoInstallPath + "\\Ple14L", true);
                     }
                 }
 
                 if(regKeyExists(softwareClasses, "plexo-prelaunch14l") && regKeyExists(softwareClasses, "ple14l-player"))
                 {
+                    Console.WriteLine("Deleting registry key plexo-prelaunch14l");
                     softwareClasses.DeleteSubKeyTree("plexo-prelaunch14l");
+                    Console.WriteLine("Deleting registry key ple14l-player");
+                    softwareClasses.DeleteSubKeyTree("ple14l-player");
                 }
 
-                MessageBox.Show("Plexo Uninstall was successful.", "Uninstalled", MessageBoxButton.OK, MessageBoxImage.Asterisk);
+                Console.WriteLine("Successfully uninstalled Plexo!");
+                MessageBox.Show("Plexo Uninstall was successful!", "Uninstalled", MessageBoxButton.OK, MessageBoxImage.Asterisk);
             }
             //Environment.Exit(0);
         }
