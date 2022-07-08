@@ -171,8 +171,6 @@ namespace PlexoLauncherMain
         }
         static async Task Main(string[] args)
         {
-            checkIfInstalled();
-
             foreach(string arg in args)
             {
                 switch(arg.ToLower())
@@ -188,6 +186,7 @@ namespace PlexoLauncherMain
 
             if(!uninstalling)
             {
+                checkIfInstalled();
                 string bootstrapperExePath = tempPath + "\\PlexoPlayerLauncher-" + generateRandString() + ".exe";
                 currentVersion = getStringFromUrl(generateBaseUrl(1) + "/version");
 
