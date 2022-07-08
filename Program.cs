@@ -258,7 +258,7 @@ namespace PlexoLauncherMain
 
                 if(regKeyExists(softwareClasses, "plexo-prelaunch14l") && regKeyExists(softwareClasses, "ple14l-player"))
                 {
-                    softwareClasses.DeleteSubKey("plexo-prelaunch14l");
+                    softwareClasses.DeleteSubKeyTree("plexo-prelaunch14l");
                 }
 
                 MessageBox.Show("Plexo Uninstall was successful.", "Uninstalled", MessageBoxButton.OK, MessageBoxImage.Asterisk);
