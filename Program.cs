@@ -270,6 +270,7 @@ namespace PlexoLauncherMain
                 Console.WriteLine("Successfully uninstalled Plexo!");
                 MessageBox.Show("Plexo Uninstall was successful!", "Uninstalled", MessageBoxButton.OK, MessageBoxImage.Asterisk);
             }
+            Console.ReadKey();
             //Environment.Exit(0);
         }
     }
