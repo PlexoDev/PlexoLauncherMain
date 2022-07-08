@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -160,6 +161,12 @@ namespace PlexoLauncherMain
                 Environment.Exit(0);
             }
         }
+        private static bool isAdministrator()
+        {
+            var identity = WindowsIdentity.GetCurrent();
+            var principal = new WindowsPrincipal(identity);
+            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+        }
         private static void checkIfInstalled()
         {
             if (regKeyExists(softwareClasses, "plexo-prelaunch14l") || regKeyExists(softwareClasses, "ple14l-player"))
@@ -233,7 +240,13 @@ namespace PlexoLauncherMain
                 {
                     if (Directory.Exists(getProgramFilesDir() + "\\Ple14L"))
                     {
-                        Directory.Delete(getProgramFilesDir() + "\\Ple14L", true);
+                        if(isAdministrator())
+                        {
+                            Directory.Delete(getProgramFilesDir() + "\\Ple14L", true);
+                        } else
+                        {
+                            MessageBox.Show("You must run as administrator to uninstall Plexo.", "Error whilst uninstalling", MessageBoxButton.OK, MessageBoxImage.Asterisk);
+                        }
                     }
                 } else
                 {
